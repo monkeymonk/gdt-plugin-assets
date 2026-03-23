@@ -11,10 +11,10 @@ import (
 )
 
 type RenameOp struct {
-	OldPath string
-	NewPath string
-	AbsOld  string
-	AbsNew  string
+	OldPath string `json:"old_path"`
+	NewPath string `json:"new_path"`
+	AbsOld  string `json:"abs_old"`
+	AbsNew  string `json:"abs_new"`
 }
 
 var camelSplitRe = regexp.MustCompile(`([a-z0-9])([A-Z])`)
