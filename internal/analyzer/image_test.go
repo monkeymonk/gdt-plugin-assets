@@ -41,6 +41,40 @@ func TestImageAnalyzer_PolicyMaxSize(t *testing.T) {
 	}
 }
 
+func TestImageAnalyzer_PowerOfTwo(t *testing.T) {
+	pol := policy.Default()
+	pol.Images.RequirePowerOfTwo = true
+	pol.Images.AllowNonPotForUI = true
+
+	assets := []asset.Asset{
+		{
+			Path: "assets/images/texture.png", Type: asset.TypeImage, Size: 1024,
+			Image: &asset.ImageMeta{Width: 300, Height: 300, IsPowerOfTwo: false},
+		},
+		{
+			Path: "assets/images/ui/button.png", Type: asset.TypeImage, Size: 1024,
+			Image: &asset.ImageMeta{Width: 300, Height: 200, IsPowerOfTwo: false},
+		},
+		{
+			Path: "assets/images/tile.png", Type: asset.TypeImage, Size: 1024,
+			Image: &asset.ImageMeta{Width: 512, Height: 512, IsPowerOfTwo: true},
+		},
+	}
+
+	diags := (&ImageAnalyzer{}).Analyze(assets, &pol)
+
+	potCount := 0
+	for _, d := range diags.Items {
+		if d.Rule == "image.pot" {
+			potCount++
+		}
+	}
+	// texture.png should fail POT, ui/button.png should be exempt, tile.png is POT
+	if potCount != 1 {
+		t.Errorf("expected 1 POT diagnostic, got %d", potCount)
+	}
+}
+
 func TestImageAnalyzer_DisallowedFormat(t *testing.T) {
 	pol := policy.Default()
 	assets := []asset.Asset{

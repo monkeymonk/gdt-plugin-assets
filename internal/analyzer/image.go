@@ -42,6 +42,26 @@ func (a *ImageAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 		}
 
 		checkOversize(ast, maxBytes, "image.oversize", diags)
+
+		if pol.Images.RequirePowerOfTwo && ast.Image != nil && !ast.Image.IsPowerOfTwo {
+			if pol.Images.AllowNonPotForUI && isUIPath(ast.Path) {
+				// exempt UI assets
+			} else {
+				diags.Add(diagnostic.Diagnostic{
+					Path:        ast.Path,
+					Severity:    diagnostic.Warning,
+					Rule:        "image.pot",
+					Message:     fmt.Sprintf("dimensions %dx%d are not power-of-two", ast.Image.Width, ast.Image.Height),
+					Explanation: "Non-POT textures may cause GPU memory waste or compatibility issues",
+				})
+			}
+		}
 	}
 	return diags
+}
+
+func isUIPath(path string) bool {
+	return strings.Contains(strings.ToLower(path), "/ui/") ||
+		strings.Contains(strings.ToLower(path), "/gui/") ||
+		strings.Contains(strings.ToLower(path), "/hud/")
 }
