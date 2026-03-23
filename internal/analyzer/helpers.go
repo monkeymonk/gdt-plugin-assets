@@ -16,12 +16,13 @@ func buildFormatSet(formats []string) map[string]bool {
 	return m
 }
 
-func checkOversize(a asset.Asset, threshold int64, rule string, diags *diagnostic.Set) {
+func checkOversize(a asset.Asset, threshold int64, rule, category string, diags *diagnostic.Set) {
 	if a.Size >= threshold {
 		diags.Add(diagnostic.Diagnostic{
 			Path:     a.Path,
 			Severity: diagnostic.Error,
 			Rule:     rule,
+			Category: category,
 			Message:  fmt.Sprintf("file is %s, exceeds %s threshold", asset.HumanSize(a.Size), asset.HumanSize(threshold)),
 		})
 	}

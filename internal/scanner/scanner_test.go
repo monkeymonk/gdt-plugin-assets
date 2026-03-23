@@ -1,6 +1,8 @@
 package scanner
 
 import (
+	"image"
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -53,6 +55,35 @@ func TestScanWithTypeFilter(t *testing.T) {
 	}
 	if len(assets) != 1 {
 		t.Errorf("got %d image assets, want 1", len(assets))
+	}
+}
+
+func TestScan_ImageMetadata(t *testing.T) {
+	dir := t.TempDir()
+	imgDir := filepath.Join(dir, "assets", "images")
+	os.MkdirAll(imgDir, 0755)
+
+	img := image.NewRGBA(image.Rect(0, 0, 64, 64))
+	f, _ := os.Create(filepath.Join(imgDir, "icon.png"))
+	png.Encode(f, img)
+	f.Close()
+
+	assets, err := Scan(dir, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var found bool
+	for _, a := range assets {
+		if a.Image != nil && a.Image.Width == 64 && a.Image.Height == 64 {
+			found = true
+			if !a.Image.IsPowerOfTwo {
+				t.Error("64x64 should be POT")
+			}
+		}
+	}
+	if !found {
+		t.Error("image metadata not populated for icon.png")
 	}
 }
 

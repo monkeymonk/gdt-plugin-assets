@@ -6,15 +6,18 @@ A [GDT](https://github.com/monkeymonk/gdt) plugin that provides policy-driven as
 
 ## Features
 
-- **Policy-driven** -- all checks configured via a single TOML file
-- **Asset scanning** -- inventory all project assets with type detection and hashing
-- **Linting** -- naming conventions, folder structure, format restrictions, size thresholds
+- **Policy-driven** -- all checks configured via a single TOML file with named profiles
+- **Asset scanning** -- inventory all project assets with type detection, hashing, and image metadata
+- **Linting** -- naming conventions, folder structure, format restrictions, size thresholds, power-of-two checks
 - **Duplicate detection** -- find exact duplicates (by hash) or likely duplicates (by filename)
 - **Reference checking** -- detect broken `res://` paths in `.tscn` and `.tres` files
-- **Batch renaming** -- convert filenames to snake_case, kebab-case, or lowercase with dry-run preview
+- **Reference repair** -- conservatively rewrite `res://` paths from rename manifests
+- **Batch renaming** -- convert filenames to snake_case, kebab-case, or lowercase with collision detection
+- **Rollback support** -- rename operations produce JSON manifests for safe undo
 - **Package validation** -- block source files (.blend, .psd, etc.) from shipping builds
 - **Lifecycle hooks** -- automatically validate assets before export and during development
 - **Multiple output formats** -- table, JSON, CSV, Markdown for CI integration
+- **Policy profiles** -- named overrides (mobile, release, etc.) for different build targets
 
 ## Supported Asset Types
 
@@ -83,6 +86,9 @@ gdt assets lint all
 
 # Full health report
 gdt assets report
+
+# Health check
+gdt assets doctor check
 ```
 
 ## Commands
@@ -100,7 +106,7 @@ The `--with-sample-folders` flag also creates the canonical asset directories de
 
 ### `gdt assets scan`
 
-Discovers and lists all recognized assets in your project.
+Discovers and lists all recognized assets in your project. Image assets include extracted metadata (dimensions, power-of-two status).
 
 ```bash
 gdt assets scan                          # all assets, table format
@@ -125,7 +131,7 @@ Total: 3 assets (1.4 MB)
 
 ### `gdt assets lint`
 
-Runs policy checks on assets without modifying anything. Returns exit code 1 if errors or blockers are found, making it suitable for CI gates.
+Runs policy checks on assets without modifying anything. Returns structured exit codes suitable for CI gates.
 
 ```bash
 gdt assets lint all                      # run all analyzers
@@ -135,17 +141,18 @@ gdt assets lint images                   # image-specific checks
 gdt assets lint audio                    # audio-specific checks
 gdt assets lint models                   # 3D model checks
 gdt assets lint all --format json        # machine-readable output
+gdt assets lint all --profile mobile     # lint with mobile profile overrides
 ```
 
 **Analyzers included:**
 
-| Analyzer | What it checks |
-|----------|---------------|
-| `names` | Filename casing (snake_case by default), spaces in filenames |
-| `structure` | Assets placed in correct folders per policy |
-| `images` | Allowed formats (png/webp/jpg default), file size thresholds (>10MB) |
-| `audio` | Preferred formats (ogg/wav default), file size thresholds (>50MB) |
-| `models` | FBX format warnings, file size thresholds (>100MB) |
+| Analyzer | What it checks | Category |
+|----------|---------------|----------|
+| `names` | Filename casing (snake_case by default), spaces in filenames | naming |
+| `structure` | Assets placed in correct folders per policy | structure |
+| `images` | Allowed formats, policy-driven size thresholds, power-of-two dimensions | metadata, optimization |
+| `audio` | Preferred formats, policy-driven size thresholds | metadata, optimization |
+| `models` | FBX format warnings, policy-driven size thresholds | metadata, optimization |
 
 **Severity levels:**
 
@@ -153,8 +160,8 @@ gdt assets lint all --format json        # machine-readable output
 |-------|---------|-------------------|
 | `INFO` | Informational | No |
 | `WARNING` | Should be addressed | No |
-| `ERROR` | Must be fixed | Yes |
-| `BLOCKER` | Prevents export | Yes |
+| `ERROR` | Must be fixed | Yes (exit 3) |
+| `BLOCKER` | Prevents export | Yes (exit 4) |
 
 Example output:
 
@@ -162,10 +169,11 @@ Example output:
   WARNING  assets/images/HeroBanner.png: filename "HeroBanner.png" does not match snake convention
   ERROR    assets/images/huge texture.png: filename contains spaces: "huge texture.png"
   WARNING  assets/images/legacy.bmp: format .bmp not in allowed list [png webp jpg]
+  WARNING  assets/images/bg.png: dimensions 300x300 are not power-of-two
   WARNING  assets/audio/music.mp3: format .mp3 not in preferred list [ogg wav]
   WARNING  assets/models/Hero.fbx: FBX format detected; preferred formats: [glb gltf]
 
-0 info, 4 warnings, 1 errors, 0 blockers
+0 info, 5 warnings, 1 errors, 0 blockers
 ```
 
 ### `gdt assets report`
@@ -181,12 +189,13 @@ gdt assets report --hash                 # include file hashes
 
 ### `gdt assets rename`
 
-Batch renames assets to match the naming convention defined in your policy. Defaults to dry-run mode for safety.
+Batch renames assets to match the naming convention defined in your policy. Defaults to dry-run mode for safety. Detects collisions before applying and writes a rollback manifest for safe undo.
 
 ```bash
 gdt assets rename                        # preview (dry-run is default)
 gdt assets rename --dry-run              # explicit preview
-gdt assets rename --apply                # execute renames
+gdt assets rename --apply                # execute renames (writes rollback manifest)
+gdt assets rename --rollback <manifest>  # undo a previous rename
 ```
 
 Example dry-run output:
@@ -201,6 +210,8 @@ Example dry-run output:
 Dry run. Use --apply to execute.
 ```
 
+When `--apply` is used, a rollback manifest (`.assets-rollback-YYYYMMDD-HHMMSS.json`) is written to the project root before any files are moved. Use `--rollback` with this file to undo.
+
 Supported conventions: `snake` (default), `kebab`, `lower`.
 
 ### `gdt assets refs`
@@ -208,13 +219,16 @@ Supported conventions: `snake` (default), `kebab`, `lower`.
 Checks and repairs asset references in Godot scene and resource files.
 
 ```bash
-gdt assets refs check                    # find broken res:// references
-gdt assets refs repair                   # interactive repair (planned)
+gdt assets refs check                                      # find broken res:// references
+gdt assets refs repair --from-manifest <rollback.json>     # preview ref repairs
+gdt assets refs repair --from-manifest <rollback.json> --apply  # apply ref repairs
 ```
 
 Scans `.tscn`, `.tres`, and `.godot` files for `res://` paths that don't resolve to existing files.
 
-Example output:
+The `repair` subcommand conservatively rewrites `res://` references based on a rename manifest. It only performs exact `path="res://..."` string replacements in known text-based engine files.
+
+Example check output:
 
 ```
   BROKEN  level.tscn:3 -> res://assets/images/missing_icon.png
@@ -270,6 +284,23 @@ gdt assets policy show                   # display current policy
 gdt assets policy validate               # check policy file syntax
 ```
 
+### `gdt assets doctor check`
+
+Shows comprehensive plugin health: policy validity, asset inventory with type breakdown, lint summary, and broken reference count.
+
+```bash
+gdt assets doctor check
+```
+
+Example output:
+
+```
+OK   assets.policy.toml valid
+OK   found 42 assets (image: 20, audio: 8, model: 5, font: 3, engine: 6)
+OK   3 warning(s), no errors
+OK   no broken references
+```
+
 ## Policy Configuration
 
 All behavior is driven by `assets.policy.toml` in your project root. Run `gdt assets init` to generate it with defaults.
@@ -293,19 +324,21 @@ fonts = "assets/fonts"                   # expected location for fonts
 source = "source_assets"                 # authoring source files
 
 [images]
-max_size_default = 4096                  # max texture dimension (px)
-max_size_ui = 2048                       # max UI texture dimension (px)
-require_power_of_two = true              # require POT dimensions
-allow_non_pot_for_ui = true              # exempt UI textures from POT
+max_size_default_kb = 4096               # max image file size in KB (default 4 MB)
+max_size_ui_kb = 2048                    # max UI image file size in KB (default 2 MB)
+require_power_of_two = true              # require POT dimensions for textures
+allow_non_pot_for_ui = true              # exempt UI textures from POT requirement
 allowed_formats = ["png", "webp", "jpg"] # accepted image formats
 
 [audio]
 preferred_runtime_formats = ["ogg", "wav"]  # preferred audio formats
 allowed_sample_rates = [44100, 48000]       # valid sample rates
+max_size_kb = 51200                         # max audio file size in KB (default 50 MB)
 
 [models]
 preferred_formats = ["glb", "gltf"]      # preferred 3D formats
 warn_on_fbx = true                       # flag FBX usage
+max_size_kb = 102400                     # max model file size in KB (default 100 MB)
 
 [animations]
 clip_case = "snake"                      # animation clip naming convention
@@ -313,6 +346,18 @@ baseline_fps = 30                        # expected animation FPS
 
 [package.release]
 forbid_source_files = true               # block .blend/.psd/etc in builds
+
+[profiles.mobile]
+[profiles.mobile.images]
+max_size_default_kb = 1024               # tighter limit for mobile
+require_power_of_two = true
+
+[profiles.mobile.audio]
+max_size_kb = 10240                      # 10 MB limit for mobile audio
+
+[profiles.release]
+[profiles.release.models]
+max_size_kb = 51200                      # 50 MB limit for release builds
 ```
 
 ### Overriding defaults
@@ -329,6 +374,17 @@ allowed_formats = ["png", "webp", "jpg", "bmp"]
 preferred_runtime_formats = ["ogg", "wav", "mp3"]
 ```
 
+### Profiles
+
+Named profiles let you apply different thresholds for different build targets. Use `--profile` with lint or set `GDT_ASSETS_PROFILE` for hooks:
+
+```bash
+gdt assets lint all --profile mobile     # lint with mobile limits
+GDT_ASSETS_PROFILE=release gdt export    # before_export uses release profile
+```
+
+Profile overrides are merged on top of the base policy. Only specified fields are overridden; everything else keeps its base value.
+
 ## GDT Lifecycle Hooks
 
 The plugin integrates with GDT's hook system to provide automatic validation at key moments.
@@ -343,7 +399,7 @@ Triggered before `gdt run`. Checks for broken asset references and warns if any 
 
 ### `before_export`
 
-Triggered before `gdt export`. Runs the full analyzer suite against project policy:
+Triggered before `gdt export`. Runs the full analyzer suite against project policy. Supports `GDT_ASSETS_PROFILE` env var for profile selection.
 
 - **FAIL** (blocks export) if any blocker-level issues are found
 - **WARN** (allows export) if errors are found but no blockers
@@ -351,10 +407,12 @@ Triggered before `gdt export`. Runs the full analyzer suite against project poli
 
 ### `doctor`
 
-Contributes to `gdt doctor` output. Checks:
+Contributes to `gdt doctor` output. Shows:
 
-- Whether `assets.policy.toml` exists and is valid
-- Whether the project asset scan completes successfully
+- Policy file validity
+- Asset count with type breakdown
+- Lint summary (blockers, errors, warnings)
+- Broken reference count
 
 ## CI Integration
 
@@ -364,14 +422,20 @@ Contributes to `gdt doctor` output. Checks:
 
 | Code | Meaning |
 |------|---------|
-| `0` | Success, no errors |
-| `1` | Errors or blockers found |
+| `0` | Success, no issues |
+| `1` | Operational failure or invalid usage |
+| `2` | Policy file invalid |
+| `3` | Diagnostics at error threshold |
+| `4` | Diagnostics at blocker threshold |
 
 ### Example GitHub Actions step
 
 ```yaml
 - name: Lint assets
   run: gdt assets lint all --format json > asset-lint.json
+
+- name: Lint assets (mobile profile)
+  run: gdt assets lint all --profile mobile
 
 - name: Check references
   run: gdt assets refs check
@@ -401,13 +465,14 @@ gdt-assets (binary)
   main.go                  CLI entry point
   internal/
     cmd/                   Command handlers (init, scan, lint, ...)
-    asset/                 Asset types and extension-based detection
-    policy/                TOML policy loading with defaults
-    scanner/               Filesystem walker with filtering and hashing
-    diagnostic/            Severity levels and diagnostic collections
+    asset/                 Asset types, extension detection, image metadata extraction
+    policy/                TOML policy loading with defaults and profile resolution
+    scanner/               Filesystem walker with filtering, hashing, and metadata
+    diagnostic/            Severity levels, categories, and diagnostic collections
+    exitcode/              Structured exit code constants
     analyzer/              Pluggable analyzers (name, structure, image, audio, model)
-    rename/                Batch rename with case conversion
-    refs/                  Godot res:// reference scanner
+    rename/                Batch rename with collision detection, plans, and rollback
+    refs/                  Godot res:// reference scanner and conservative repair
     dedupe/                Hash and name-based duplicate detection
     report/                Multi-format output (table, JSON, CSV, Markdown)
 ```

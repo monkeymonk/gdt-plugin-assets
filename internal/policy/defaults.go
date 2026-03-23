@@ -17,8 +17,8 @@ func Default() Policy {
 			Source:  "source_assets",
 		},
 		Images: ImagePolicy{
-			MaxSizeDefault:    4096,
-			MaxSizeUI:         2048,
+			MaxSizeDefaultKB:  4096,
+			MaxSizeUIKB:       2048,
 			RequirePowerOfTwo: true,
 			AllowNonPotForUI:  true,
 			AllowedFormats:    []string{"png", "webp", "jpg"},
@@ -26,10 +26,12 @@ func Default() Policy {
 		Audio: AudioPolicy{
 			PreferredFormats:   []string{"ogg", "wav"},
 			AllowedSampleRates: []int{44100, 48000},
+			MaxSizeKB:          51200,
 		},
 		Models: ModelPolicy{
 			PreferredFormats: []string{"glb", "gltf"},
 			WarnOnFBX:        true,
+			MaxSizeKB:        102400,
 		},
 		Animations: AnimationPolicy{
 			ClipCase:    "snake",

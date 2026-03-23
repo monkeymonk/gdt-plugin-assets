@@ -16,9 +16,8 @@ type BrokenRef struct {
 	Line   int
 }
 
-// FindBroken walks the project tree to discover engine resource files and checks
-// for broken res:// references. Use FindBrokenInFiles when file paths are already known.
-func FindBroken(root string) ([]BrokenRef, error) {
+// FindEngineFiles walks root and returns absolute paths to .tscn, .tres, and .godot files.
+func FindEngineFiles(root string) ([]string, error) {
 	var files []string
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
@@ -30,6 +29,13 @@ func FindBroken(root string) ([]BrokenRef, error) {
 		}
 		return nil
 	})
+	return files, err
+}
+
+// FindBroken walks the project tree to discover engine resource files and checks
+// for broken res:// references. Use FindBrokenInFiles when file paths are already known.
+func FindBroken(root string) ([]BrokenRef, error) {
+	files, err := FindEngineFiles(root)
 	if err != nil {
 		return nil, err
 	}
