@@ -60,12 +60,20 @@ func HumanSize(b int64) string {
 	}
 }
 
+// ImageMeta holds pixel dimensions and texture properties for image assets.
+type ImageMeta struct {
+	Width        int  `json:"width"`
+	Height       int  `json:"height"`
+	IsPowerOfTwo bool `json:"is_power_of_two"`
+}
+
 // Asset represents a discovered project asset.
 type Asset struct {
-	Path    string    // relative path from project root
-	AbsPath string    // absolute filesystem path
-	Type    AssetType
-	Size    int64
-	Hash    string   // sha256, populated on demand
-	Tags    []string
+	Path    string     `json:"path"`
+	AbsPath string     `json:"abs_path,omitempty"`
+	Type    AssetType  `json:"type"`
+	Size    int64      `json:"size"`
+	Hash    string     `json:"hash,omitempty"`
+	Tags    []string   `json:"tags,omitempty"`
+	Image   *ImageMeta `json:"image,omitempty"`
 }
