@@ -15,6 +15,8 @@ func cmdScan(args []string) int {
 	format := fs.String("format", "table", "Output format: table, json, md, csv")
 	types := fs.String("type", "", "Filter by types (comma-separated: image,audio,model)")
 	hash := fs.Bool("hash", false, "Compute SHA256 hashes")
+	profile := fs.String("profile", "", "Policy profile (reserved for future use)")
+	_ = profile
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}

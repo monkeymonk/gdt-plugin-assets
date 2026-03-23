@@ -64,6 +64,15 @@ func hookBeforeExport() int {
 	root := projectRoot()
 	pol := policy.LoadOrDefault(filepath.Join(root, policy.FileName))
 
+	if profile := os.Getenv("GDT_ASSETS_PROFILE"); profile != "" {
+		resolved, err := policy.ResolveProfile(pol, profile)
+		if err != nil {
+			fmt.Printf("WARN invalid profile %q: %v\n", profile, err)
+		} else {
+			pol = resolved
+		}
+	}
+
 	assets, err := scanner.Scan(root, scanner.Options{})
 	if err != nil {
 		fmt.Println("FAIL asset scan failed")

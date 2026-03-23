@@ -16,6 +16,7 @@ import (
 func cmdLint(args []string) int {
 	fs := flag.NewFlagSet("lint", flag.ContinueOnError)
 	format := fs.String("format", "table", "Output format: table, json, csv")
+	profile := fs.String("profile", "", "Policy profile to apply (e.g., mobile, release)")
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
@@ -26,6 +27,15 @@ func cmdLint(args []string) int {
 	}
 
 	pol := policy.LoadOrDefault(filepath.Join(projectRoot(), policy.FileName))
+
+	if *profile != "" {
+		resolved, err := policy.ResolveProfile(pol, *profile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			return exitcode.ErrPolicy
+		}
+		pol = resolved
+	}
 
 	assets, code := scanAssets(scanner.Options{})
 	if code != 0 {
