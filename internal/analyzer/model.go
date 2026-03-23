@@ -10,12 +10,19 @@ import (
 	"github.com/monkeymonk/gdt-assets/internal/policy"
 )
 
+const modelOversizeFallback = 100 * 1024 * 1024
+
 type ModelAnalyzer struct{}
 
 func (a *ModelAnalyzer) Name() string { return "model" }
 
 func (a *ModelAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagnostic.Set {
 	diags := &diagnostic.Set{}
+
+	maxBytes := int64(modelOversizeFallback)
+	if pol.Models.MaxSizeKB > 0 {
+		maxBytes = int64(pol.Models.MaxSizeKB) * 1024
+	}
 
 	for _, ast := range assets {
 		if ast.Type != asset.TypeModel {
@@ -33,7 +40,7 @@ func (a *ModelAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 			})
 		}
 
-		checkOversize(ast, 100*1024*1024, "model.oversize", diags)
+		checkOversize(ast, maxBytes, "model.oversize", diags)
 	}
 	return diags
 }

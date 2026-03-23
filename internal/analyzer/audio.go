@@ -10,6 +10,8 @@ import (
 	"github.com/monkeymonk/gdt-assets/internal/policy"
 )
 
+const audioOversizeFallback = 50 * 1024 * 1024
+
 type AudioAnalyzer struct{}
 
 func (a *AudioAnalyzer) Name() string { return "audio" }
@@ -17,6 +19,11 @@ func (a *AudioAnalyzer) Name() string { return "audio" }
 func (a *AudioAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagnostic.Set {
 	diags := &diagnostic.Set{}
 	preferred := buildFormatSet(pol.Audio.PreferredFormats)
+
+	maxBytes := int64(audioOversizeFallback)
+	if pol.Audio.MaxSizeKB > 0 {
+		maxBytes = int64(pol.Audio.MaxSizeKB) * 1024
+	}
 
 	for _, ast := range assets {
 		if ast.Type != asset.TypeAudio {
@@ -33,7 +40,7 @@ func (a *AudioAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 			})
 		}
 
-		checkOversize(ast, 50*1024*1024, "audio.oversize", diags)
+		checkOversize(ast, maxBytes, "audio.oversize", diags)
 	}
 	return diags
 }

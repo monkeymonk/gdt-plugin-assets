@@ -20,6 +20,27 @@ func TestImageAnalyzer_OversizedFile(t *testing.T) {
 	}
 }
 
+func TestImageAnalyzer_PolicyMaxSize(t *testing.T) {
+	pol := policy.Default()
+	pol.Images.MaxSizeDefaultKB = 100 // 100 KB
+
+	assets := []asset.Asset{
+		{Path: "assets/images/big.png", Type: asset.TypeImage, Size: 200 * 1024}, // 200 KB
+	}
+
+	diags := (&ImageAnalyzer{}).Analyze(assets, &pol)
+
+	found := false
+	for _, d := range diags.Items {
+		if d.Rule == "image.oversize" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected image.oversize diagnostic for 200KB file with 100KB policy limit")
+	}
+}
+
 func TestImageAnalyzer_DisallowedFormat(t *testing.T) {
 	pol := policy.Default()
 	assets := []asset.Asset{

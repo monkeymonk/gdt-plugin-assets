@@ -36,8 +36,8 @@ type FolderPolicy struct {
 }
 
 type ImagePolicy struct {
-	MaxSizeDefault    int      `toml:"max_size_default"`
-	MaxSizeUI         int      `toml:"max_size_ui"`
+	MaxSizeDefaultKB  int      `toml:"max_size_default_kb"`
+	MaxSizeUIKB       int      `toml:"max_size_ui_kb"`
 	RequirePowerOfTwo bool     `toml:"require_power_of_two"`
 	AllowNonPotForUI  bool     `toml:"allow_non_pot_for_ui"`
 	AllowedFormats    []string `toml:"allowed_formats"`
@@ -46,11 +46,13 @@ type ImagePolicy struct {
 type AudioPolicy struct {
 	PreferredFormats   []string `toml:"preferred_runtime_formats"`
 	AllowedSampleRates []int    `toml:"allowed_sample_rates"`
+	MaxSizeKB          int      `toml:"max_size_kb"`
 }
 
 type ModelPolicy struct {
 	PreferredFormats []string `toml:"preferred_formats"`
 	WarnOnFBX        bool     `toml:"warn_on_fbx"`
+	MaxSizeKB        int      `toml:"max_size_kb"`
 }
 
 type AnimationPolicy struct {

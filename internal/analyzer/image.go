@@ -10,7 +10,7 @@ import (
 	"github.com/monkeymonk/gdt-assets/internal/policy"
 )
 
-const imageOversizeThreshold = 10 * 1024 * 1024
+const imageOversizeFallback = 10 * 1024 * 1024 // 10 MB fallback
 
 type ImageAnalyzer struct{}
 
@@ -19,6 +19,11 @@ func (a *ImageAnalyzer) Name() string { return "image" }
 func (a *ImageAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagnostic.Set {
 	diags := &diagnostic.Set{}
 	allowedSet := buildFormatSet(pol.Images.AllowedFormats)
+
+	maxBytes := int64(imageOversizeFallback)
+	if pol.Images.MaxSizeDefaultKB > 0 {
+		maxBytes = int64(pol.Images.MaxSizeDefaultKB) * 1024
+	}
 
 	for _, ast := range assets {
 		if ast.Type != asset.TypeImage {
@@ -36,7 +41,7 @@ func (a *ImageAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 			})
 		}
 
-		checkOversize(ast, imageOversizeThreshold, "image.oversize", diags)
+		checkOversize(ast, maxBytes, "image.oversize", diags)
 	}
 	return diags
 }
