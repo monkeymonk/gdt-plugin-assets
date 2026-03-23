@@ -10,14 +10,15 @@ import (
 const FileName = "assets.policy.toml"
 
 type Policy struct {
-	Version    int             `toml:"version"`
-	Naming     NamingPolicy    `toml:"naming"`
-	Folders    FolderPolicy    `toml:"folders"`
-	Images     ImagePolicy     `toml:"images"`
-	Audio      AudioPolicy     `toml:"audio"`
-	Models     ModelPolicy     `toml:"models"`
-	Animations AnimationPolicy `toml:"animations"`
-	Package    PackagePolicy   `toml:"package"`
+	Version    int                        `toml:"version"`
+	Naming     NamingPolicy               `toml:"naming"`
+	Folders    FolderPolicy               `toml:"folders"`
+	Images     ImagePolicy                `toml:"images"`
+	Audio      AudioPolicy                `toml:"audio"`
+	Models     ModelPolicy                `toml:"models"`
+	Animations AnimationPolicy            `toml:"animations"`
+	Package    PackagePolicy              `toml:"package"`
+	Profiles   map[string]ProfileOverrides `toml:"profiles,omitempty"`
 }
 
 type NamingPolicy struct {
@@ -66,6 +67,27 @@ type PackagePolicy struct {
 
 type ReleasePolicy struct {
 	ForbidSourceFiles bool `toml:"forbid_source_files"`
+}
+
+type ProfileOverrides struct {
+	Images *ImageOverrides `toml:"images,omitempty"`
+	Audio  *AudioOverrides `toml:"audio,omitempty"`
+	Models *ModelOverrides `toml:"models,omitempty"`
+}
+
+type ImageOverrides struct {
+	MaxSizeDefaultKB  *int      `toml:"max_size_default_kb,omitempty"`
+	MaxSizeUIKB       *int      `toml:"max_size_ui_kb,omitempty"`
+	RequirePowerOfTwo *bool     `toml:"require_power_of_two,omitempty"`
+	AllowedFormats    *[]string `toml:"allowed_formats,omitempty"`
+}
+
+type AudioOverrides struct {
+	MaxSizeKB *int `toml:"max_size_kb,omitempty"`
+}
+
+type ModelOverrides struct {
+	MaxSizeKB *int `toml:"max_size_kb,omitempty"`
 }
 
 func Load(path string) (*Policy, error) {
