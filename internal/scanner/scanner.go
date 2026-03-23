@@ -69,6 +69,13 @@ func Scan(root string, opts Options) ([]asset.Asset, error) {
 			}
 		}
 
+		if a.Type == asset.TypeImage {
+			meta, err := asset.ExtractImageMeta(path)
+			if err == nil {
+				a.Image = meta
+			}
+		}
+
 		assets = append(assets, a)
 		return nil
 	})
