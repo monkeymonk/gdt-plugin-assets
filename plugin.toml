@@ -1,0 +1,11 @@
+name = "assets"
+version = "0.1.0"
+protocol = 2
+commands = ["assets"]
+requires_gdt = ">=1.0"
+description = "Policy-driven asset operations, hygiene, and validation for game teams"
+
+[contributions]
+hooks = ["after_new", "before_run", "before_export"]
+doctor = true
+completions = true

@@ -1,0 +1,62 @@
+package cmd
+
+import (
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/monkeymonk/gdt-assets/internal/analyzer"
+	"github.com/monkeymonk/gdt-assets/internal/policy"
+	"github.com/monkeymonk/gdt-assets/internal/report"
+	"github.com/monkeymonk/gdt-assets/internal/scanner"
+)
+
+func cmdLint(args []string) int {
+	fs := flag.NewFlagSet("lint", flag.ContinueOnError)
+	format := fs.String("format", "table", "Output format: table, json, csv")
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+
+	subcmd := "all"
+	if fs.NArg() > 0 {
+		subcmd = fs.Arg(0)
+	}
+
+	pol := policy.LoadOrDefault(filepath.Join(projectRoot(), policy.FileName))
+
+	assets, code := scanAssets(scanner.Options{})
+	if code != 0 {
+		return code
+	}
+
+	var analyzers []analyzer.Analyzer
+	switch subcmd {
+	case "all":
+		analyzers = analyzer.DefaultAnalyzers()
+	case "names":
+		analyzers = []analyzer.Analyzer{&analyzer.NameAnalyzer{}}
+	case "structure":
+		analyzers = []analyzer.Analyzer{&analyzer.StructureAnalyzer{}}
+	case "images":
+		analyzers = []analyzer.Analyzer{&analyzer.ImageAnalyzer{}}
+	case "audio":
+		analyzers = []analyzer.Analyzer{&analyzer.AudioAnalyzer{}}
+	case "models":
+		analyzers = []analyzer.Analyzer{&analyzer.ModelAnalyzer{}}
+	default:
+		fmt.Fprintf(os.Stderr, "unknown lint target: %s\n", subcmd)
+		return 1
+	}
+
+	diags := analyzer.RunAll(analyzers, assets, pol)
+	report.FormatDiagnostics(os.Stdout, diags, *format)
+
+	fmt.Printf("\n%s\n", diags.Summary())
+
+	if diags.HasBlockers() || diags.HasErrors() {
+		return 1
+	}
+	return 0
+}
