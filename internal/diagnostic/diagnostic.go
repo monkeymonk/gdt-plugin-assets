@@ -31,6 +31,7 @@ type Diagnostic struct {
 	Path        string   `json:"path"`
 	Severity    Severity `json:"severity"`
 	Rule        string   `json:"rule"`
+	Category    string   `json:"category"`
 	Message     string   `json:"message"`
 	Explanation string   `json:"explanation,omitempty"`
 	CanAutoFix  bool     `json:"can_auto_fix,omitempty"`

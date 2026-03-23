@@ -36,12 +36,13 @@ func (a *ImageAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 				Path:        ast.Path,
 				Severity:    diagnostic.Warning,
 				Rule:        "image.format",
+				Category:    "metadata",
 				Message:     fmt.Sprintf("format %s not in allowed list %v", ext, pol.Images.AllowedFormats),
 				Explanation: "Policy restricts image formats for consistency",
 			})
 		}
 
-		checkOversize(ast, maxBytes, "image.oversize", diags)
+		checkOversize(ast, maxBytes, "image.oversize", "optimization", diags)
 
 		if pol.Images.RequirePowerOfTwo && ast.Image != nil && !ast.Image.IsPowerOfTwo {
 			if pol.Images.AllowNonPotForUI && isUIPath(ast.Path) {

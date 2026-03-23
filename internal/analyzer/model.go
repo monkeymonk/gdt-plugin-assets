@@ -40,7 +40,7 @@ func (a *ModelAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 			})
 		}
 
-		checkOversize(ast, maxBytes, "model.oversize", diags)
+		checkOversize(ast, maxBytes, "model.oversize", "optimization", diags)
 	}
 	return diags
 }

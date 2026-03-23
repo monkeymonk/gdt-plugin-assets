@@ -40,7 +40,7 @@ func (a *AudioAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 			})
 		}
 
-		checkOversize(ast, maxBytes, "audio.oversize", diags)
+		checkOversize(ast, maxBytes, "audio.oversize", "optimization", diags)
 	}
 	return diags
 }
