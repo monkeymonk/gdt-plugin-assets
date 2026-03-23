@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/monkeymonk/gdt-assets/internal/analyzer"
+	"github.com/monkeymonk/gdt-assets/internal/exitcode"
 	"github.com/monkeymonk/gdt-assets/internal/policy"
 	"github.com/monkeymonk/gdt-assets/internal/report"
 	"github.com/monkeymonk/gdt-assets/internal/scanner"
@@ -55,8 +56,11 @@ func cmdLint(args []string) int {
 
 	fmt.Printf("\n%s\n", diags.Summary())
 
-	if diags.HasBlockers() || diags.HasErrors() {
-		return 1
+	if diags.HasBlockers() {
+		return exitcode.ErrBlockers
 	}
-	return 0
+	if diags.HasErrors() {
+		return exitcode.ErrDiagnostics
+	}
+	return exitcode.OK
 }

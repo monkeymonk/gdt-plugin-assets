@@ -7,6 +7,7 @@ import (
 
 	"github.com/monkeymonk/gdt-assets/internal/analyzer"
 	"github.com/monkeymonk/gdt-assets/internal/diagnostic"
+	"github.com/monkeymonk/gdt-assets/internal/exitcode"
 	"github.com/monkeymonk/gdt-assets/internal/policy"
 	"github.com/monkeymonk/gdt-assets/internal/refs"
 	"github.com/monkeymonk/gdt-assets/internal/scanner"
@@ -73,12 +74,12 @@ func hookBeforeExport() int {
 
 	if diags.HasBlockers() {
 		fmt.Printf("FAIL %d asset blocker(s) prevent export\n", diags.Count(diagnostic.Blocker))
-		return 1
+		return exitcode.ErrBlockers
 	}
 	if diags.HasErrors() {
 		fmt.Printf("WARN %d asset error(s) detected\n", diags.Count(diagnostic.Error))
-		return 0
+		return exitcode.ErrDiagnostics
 	}
 	fmt.Printf("OK %d assets validated\n", len(assets))
-	return 0
+	return exitcode.OK
 }
