@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   build:
@@ -27,11 +28,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.23"
+          go-version-file: go.mod
+          check-latest: true
 
       - name: Build binary
         env:
@@ -43,7 +45,7 @@ jobs:
           go build -o "assets-${GOOS}-${GOARCH}${EXT}" .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: assets-${{ matrix.goos }}-${{ matrix.goarch }}
           path: assets-*
@@ -53,15 +55,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum assets-* > checksums.txt
+
+      - uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Sign checksums
+        run: |
+          cd dist
+          cosign sign-blob --yes --bundle checksums.txt.bundle checksums.txt
 
       - name: Generate changelog
         id: changelog
@@ -78,7 +92,7 @@ jobs:
           fi
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body: ${{ steps.changelog.outputs.body }}
           files: dist/*

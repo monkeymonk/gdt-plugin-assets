@@ -42,13 +42,27 @@ A [GDT](https://github.com/monkeymonk/gdt) plugin that provides policy-driven as
 gdt plugin install monkeymonk/gdt-plugin-assets
 ```
 
-This automatically downloads a pre-built binary for your platform from GitHub Releases. If no release binary is available, gdt builds from source (requires Go 1.23+).
+This automatically downloads a pre-built binary for your platform from GitHub Releases. If no release binary is available, gdt builds from source (requires Go 1.25+).
 
 Verify the installation:
 
 ```bash
 gdt plugin list          # should show "assets"
 gdt doctor               # should show asset policy checks
+```
+
+### Verifying releases
+
+Each release publishes a `checksums.txt` signed with [cosign](https://github.com/sigstore/cosign) keyless signing (Sigstore bundle format). To verify a downloaded release binary:
+
+```bash
+cosign verify-blob \
+  --bundle checksums.txt.bundle \
+  --certificate-identity-regexp 'https://github.com/monkeymonk/gdt-plugin-assets/.github/workflows/release.yml@.*' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+  checksums.txt
+
+sha256sum --check --ignore-missing checksums.txt
 ```
 
 ### Manual install
@@ -70,7 +84,7 @@ make build               # produces the "assets" binary locally
 ## Requirements
 
 - [gdt](https://github.com/monkeymonk/gdt) >= 1.0
-- Go 1.23+ (build from source only; pre-built binaries available via releases)
+- Go 1.25+ (build from source only; pre-built binaries available via releases)
 
 ## Quick Start
 

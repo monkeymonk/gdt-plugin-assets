@@ -10,14 +10,14 @@ import (
 const FileName = "assets.policy.toml"
 
 type Policy struct {
-	Version    int                        `toml:"version"`
-	Naming     NamingPolicy               `toml:"naming"`
-	Folders    FolderPolicy               `toml:"folders"`
-	Images     ImagePolicy                `toml:"images"`
-	Audio      AudioPolicy                `toml:"audio"`
-	Models     ModelPolicy                `toml:"models"`
-	Animations AnimationPolicy            `toml:"animations"`
-	Package    PackagePolicy              `toml:"package"`
+	Version    int                         `toml:"version"`
+	Naming     NamingPolicy                `toml:"naming"`
+	Folders    FolderPolicy                `toml:"folders"`
+	Images     ImagePolicy                 `toml:"images"`
+	Audio      AudioPolicy                 `toml:"audio"`
+	Models     ModelPolicy                 `toml:"models"`
+	Animations AnimationPolicy             `toml:"animations"`
+	Package    PackagePolicy               `toml:"package"`
 	Profiles   map[string]ProfileOverrides `toml:"profiles,omitempty"`
 }
 

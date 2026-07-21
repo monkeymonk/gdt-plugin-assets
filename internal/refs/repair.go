@@ -80,7 +80,7 @@ func ApplyRepair(ops []RepairOp) error {
 		for _, op := range fileOps {
 			old := `path="` + op.OldRef + `"`
 			new := `path="` + op.NewRef + `"`
-			content = strings.Replace(content, old, new, -1)
+			content = strings.ReplaceAll(content, old, new)
 		}
 
 		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
