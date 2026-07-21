@@ -46,4 +46,3 @@ func cmdInit(args []string) int {
 	fmt.Printf("Created %s\n", policyPath)
 	return 0
 }
-
