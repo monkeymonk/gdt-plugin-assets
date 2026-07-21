@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Build with Go 1.25 (latest patch via `go.mod` + `check-latest`) for
+  standard-library security fixes
+- CI now runs `golangci-lint`, `govulncheck`, and a gofmt check across
+  linux/macOS/windows, in addition to build/vet/test
+- Release binaries now ship a `checksums.txt` signed with keyless cosign
+  (`checksums.txt.bundle`, Sigstore)
+- Bumped all GitHub Actions off the deprecated Node 20 runtime; added Dependabot
+- Use `strings.ReplaceAll` in refs repair (idiomatic; flagged by staticcheck)
+
+### Fixed
+
+- `gofmt` formatting in `internal/cmd/init.go` and `internal/policy/policy.go`
+
 ## [0.2.0] - 2026-03-24
 
 ### Added
