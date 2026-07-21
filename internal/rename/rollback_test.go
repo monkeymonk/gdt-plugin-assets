@@ -54,7 +54,24 @@ func TestRollback(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(newDir, "Old.png")); err != nil {
 		t.Error("expected Old.png to be restored")
 	}
-	if _, err := os.Stat(newPath); err == nil {
-		t.Error("expected old.png to be gone after rollback")
+	// The lowercase name only disappears on case-sensitive filesystems; on
+	// case-insensitive ones (macOS, Windows) Old.png and old.png are the same
+	// entry, so this assertion is meaningful only when the FS is case-sensitive.
+	if caseSensitiveFS(t, newDir) {
+		if _, err := os.Stat(newPath); err == nil {
+			t.Error("expected old.png to be gone after rollback")
+		}
 	}
+}
+
+// caseSensitiveFS reports whether dir lives on a case-sensitive filesystem.
+func caseSensitiveFS(t *testing.T, dir string) bool {
+	t.Helper()
+	probe := filepath.Join(dir, "CaseProbe")
+	if err := os.WriteFile(probe, nil, 0644); err != nil {
+		t.Fatalf("case probe: %v", err)
+	}
+	defer os.Remove(probe)
+	_, err := os.Stat(filepath.Join(dir, "caseprobe"))
+	return err != nil
 }
