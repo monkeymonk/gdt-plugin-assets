@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-25
+
 ### Fixed
 
 - `hookBeforeExport`'s asset-error path printed a `WARN` status line
