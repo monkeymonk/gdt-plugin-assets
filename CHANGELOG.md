@@ -1,5 +1,42 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `hookBeforeExport`'s asset-error path printed a `WARN` status line
+  while returning a non-zero exit code (`exitcode.ErrDiagnostics`) —
+  gdt's V2 hook protocol treats any non-zero exit as fatal regardless
+  of the printed line, so `gdt export` was actually aborting despite
+  the "WARN" framing suggesting otherwise. Now prints `FAIL` to match
+  the exit code's actual (intentional, since v0.2.0) behavior.
+- CI's `govulncheck` job pinned `golang.org/x/vuln/cmd/govulncheck` to
+  `v1.7.0` instead of `@latest` — `v1.8.0` requires Go >=1.26, but this
+  project targets Go 1.25.
+- `refs repair`'s planning pass now warns on stderr when a `.tscn`/
+  `.tres` file can't be read instead of silently skipping it —
+  previously an unreadable file meant fewer repairs than actually
+  needed, with no indication.
+- `gdt-assets scan` (and every other command going through the shared
+  scanner) now warns on stderr when a path can't be read during the
+  filesystem walk (permission denied, broken symlink, etc.) instead of
+  silently skipping it and under-reporting the asset inventory.
+- Six diagnostics (`image.pot`, `audio.format`, `model.fbx`,
+  `naming.no_spaces`, `naming.case`, `structure.folder`) were missing
+  the `Category` field that the rest of the diagnostic taxonomy sets
+  (`optimization`/`metadata`/`naming`/`structure`) — affects the
+  documented JSON output schema.
+
+### Changed
+
+- `plugin.toml`'s `requires_gdt` lowered from the scaffold-default
+  `>=1.0` to `>=0.3.0`, matching the actual gdt version this plugin has
+  been verified against (gdt does not yet enforce this constraint, but
+  the declared value should reflect reality once it does).
+- `rename.ToSnakeCase` collapses consecutive underscores via a single
+  regex pass instead of a `Contains`/`ReplaceAll` loop — same output,
+  consistent with the file's other regex-based transforms.
+
 ## [0.3.0] - 2026-07-21
 
 ### Changed

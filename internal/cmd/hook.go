@@ -86,7 +86,12 @@ func hookBeforeExport() int {
 		return exitcode.ErrBlockers
 	}
 	if diags.HasErrors() {
-		fmt.Printf("WARN %d asset error(s) detected\n", diags.Count(diagnostic.Error))
+		// FAIL, not WARN: gdt's V2 hook protocol treats any non-zero exit
+		// as fatal regardless of the printed status line (internal/plugins/
+		// hooks.go checks the process exit code before the line text), so
+		// returning exitcode.ErrDiagnostics here already aborts the export.
+		// A "WARN" label previously misrepresented that as non-blocking.
+		fmt.Printf("FAIL %d asset error(s) detected\n", diags.Count(diagnostic.Error))
 		return exitcode.ErrDiagnostics
 	}
 	fmt.Printf("OK %d assets validated\n", len(assets))

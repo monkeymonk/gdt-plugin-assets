@@ -33,6 +33,7 @@ func (a *StructureAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *d
 				Path:        ast.Path,
 				Severity:    diagnostic.Warning,
 				Rule:        "structure.folder",
+				Category:    "structure",
 				Message:     fmt.Sprintf("expected under %s/, found at %s", folder, ast.Path),
 				Explanation: fmt.Sprintf("Policy expects %s assets in %s/", ast.Type, folder),
 				CanAutoFix:  true,

@@ -35,6 +35,7 @@ func (a *ModelAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 				Path:        ast.Path,
 				Severity:    diagnostic.Warning,
 				Rule:        "model.fbx",
+				Category:    "metadata",
 				Message:     fmt.Sprintf("FBX format detected; preferred formats: %v", pol.Models.PreferredFormats),
 				Explanation: "FBX is proprietary; glTF/GLB preferred for open toolchains",
 			})

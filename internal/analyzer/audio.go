@@ -35,6 +35,7 @@ func (a *AudioAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 				Path:        ast.Path,
 				Severity:    diagnostic.Warning,
 				Rule:        "audio.format",
+				Category:    "metadata",
 				Message:     fmt.Sprintf("format %s not in preferred list %v", ext, pol.Audio.PreferredFormats),
 				Explanation: "Non-preferred audio formats may cause runtime issues",
 			})

@@ -52,6 +52,7 @@ func (a *ImageAnalyzer) Analyze(assets []asset.Asset, pol *policy.Policy) *diagn
 					Path:        ast.Path,
 					Severity:    diagnostic.Warning,
 					Rule:        "image.pot",
+					Category:    "optimization",
 					Message:     fmt.Sprintf("dimensions %dx%d are not power-of-two", ast.Image.Width, ast.Image.Height),
 					Explanation: "Non-POT textures may cause GPU memory waste or compatibility issues",
 				})

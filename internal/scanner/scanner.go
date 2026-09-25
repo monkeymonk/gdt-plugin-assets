@@ -33,6 +33,13 @@ func Scan(root string, opts Options) ([]asset.Asset, error) {
 	var assets []asset.Asset
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			// A path-level error (permission denied, broken symlink, etc.)
+			// is skipped rather than aborting the whole scan, but must be
+			// surfaced -- silently continuing here previously made the
+			// scan under-report assets with no indication anything was
+			// wrong (e.g. a restricted subdirectory looks identical to an
+			// empty one).
+			fmt.Fprintf(os.Stderr, "WARN skipping %s: %v\n", path, err)
 			return nil
 		}
 		if info.IsDir() {

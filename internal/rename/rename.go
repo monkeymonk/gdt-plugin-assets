@@ -19,15 +19,14 @@ type RenameOp struct {
 
 var camelSplitRe = regexp.MustCompile(`([a-z0-9])([A-Z])`)
 var camelAcronymRe = regexp.MustCompile(`([A-Z]+)([A-Z][a-z])`)
+var multiUnderscoreRe = regexp.MustCompile(`_+`)
 
 func ToSnakeCase(s string) string {
 	s = camelAcronymRe.ReplaceAllString(s, "${1}_${2}")
 	s = camelSplitRe.ReplaceAllString(s, "${1}_${2}")
 	s = strings.NewReplacer("-", "_", " ", "_").Replace(s)
 	s = strings.ToLower(s)
-	for strings.Contains(s, "__") {
-		s = strings.ReplaceAll(s, "__", "_")
-	}
+	s = multiUnderscoreRe.ReplaceAllString(s, "_")
 	return s
 }
 

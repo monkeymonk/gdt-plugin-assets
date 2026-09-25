@@ -76,10 +76,14 @@ func cmdRefs(args []string) int {
 			return exitcode.ErrUsage
 		}
 
-		repairOps, err := refs.PlanRepairFromRenames(root, pairs, engineFiles)
+		repairOps, skipped, err := refs.PlanRepairFromRenames(root, pairs, engineFiles)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error planning repair: %v\n", err)
 			return exitcode.ErrUsage
+		}
+		for f, skipErr := range skipped {
+			rel, _ := filepath.Rel(root, f)
+			fmt.Fprintf(os.Stderr, "WARN could not check %s for repairs: %v\n", rel, skipErr)
 		}
 
 		if len(repairOps) == 0 {
